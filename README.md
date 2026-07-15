@@ -50,6 +50,19 @@ nsf-fmrg-data-challenge/
 │   └── nsf_fmrg_data.py
 ├── scripts/
 │   └── run_thermal_video_export.py
+├── experiments/              # one reproducible folder per modeling experiment
+├── analysis/                 # team-authored Jupyter analysis notebooks
+├── results/
+│   ├── figures/              # selected report and presentation plots
+│   ├── tables/               # compact metric summaries
+│   └── summaries/            # written experiment conclusions
+├── docs/
+│   ├── project-brief.md      # challenge scope and evaluation priorities
+│   └── research-notes/       # dated decisions, observations, and meetings
+├── deliverables/
+│   ├── report/               # editable report source and final PDF
+│   ├── presentation/         # editable slide deck and export
+│   └── submission/           # final package checklist and ZIP staging
 ├── paper/
 │   ├── 2607.07965v1.pdf
 │   └── figures/
