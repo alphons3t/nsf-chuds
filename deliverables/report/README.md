@@ -25,7 +25,7 @@ Use visualizations only when they directly support a claim: explain what each fi
 
 `FMRG_Final_Report_Audited.pdf` is the generated, three-page final report.
 It uses 10 pt Arial or larger, one-inch margins, and only metrics from
-`results/final_submission/metrics.json`.
+`results/improved_submission/metrics.json`.
 
 Rebuild it with:
 

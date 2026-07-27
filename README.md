@@ -151,19 +151,22 @@ The executed final notebook is:
 notebooks/03_final_submission_audited.ipynb
 ```
 
-It documents a leakage-controlled local-width and boundary model, compares it
-with the original notebook baseline under the same Track 21 holdout, and embeds
-the locked figures and results. The audited model improves held-out width MAE
-from **0.159 mm to 0.139 mm (12.3%)**. Held-out R² remains **-0.58** and nominal
-90% interval coverage is **76.5%**, so the submission does not claim
-closed-loop readiness.
+It documents a hierarchical local-width and boundary model under nested
+leave-one-track-out evaluation across Tracks 8, 10, 14, and 21. The promoted
+selector improves track-balanced width MAE from **0.187 mm to 0.163 mm
+(13.1%)**, worst-track MAE from **0.308 mm to 0.219 mm**, and mean boundary MAE
+from **0.180 mm to 0.148 mm**. Conditional intervals cover **91.4%** of outer
+samples with **0.738 mm** mean width. Track-balanced R² remains negative, so the
+submission does not claim closed-loop readiness.
 
 Reproduce the raw-data analysis:
 
 ```bash
-python scripts/run_final_analysis.py \
+PYTHONPATH=src LOKY_MAX_CPU_COUNT=1 MPLBACKEND=Agg \
+  .venv/bin/python scripts/run_improvement_experiments.py \
   --raw-dir /path/to/extracted/zenodo/data \
-  --output-dir results/final_submission
+  --cache-dir /path/to/cache \
+  --output-dir results/improved_submission
 ```
 
 Build the executed notebook and final report:

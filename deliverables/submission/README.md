@@ -1,4 +1,4 @@
-# Audited final submission checklist
+# Improved final submission checklist
 
 Before uploading through Qualtrics, assemble and verify:
 

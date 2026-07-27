@@ -17,8 +17,9 @@ The deck should focus on:
 - `FMRG_Final_Submission_Audited.pdf` - exported presentation PDF.
 - `FMRG_Final_Template_Starter.pptx` - audited template source used by the deck builder.
 
-The deck reports the same locked Track 21 comparison as the final notebook and
-report, including the negative held-out R² and interval under-coverage.
+The deck reports the same nested four-track result as the final notebook and
+report, including spatial-fidelity improvements, conditional uncertainty, the
+post-process SEM limitation, and the still-negative track-balanced R².
 
 Rebuild the editable deck after installing the Node dependency:
 
