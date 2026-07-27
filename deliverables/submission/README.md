@@ -1,12 +1,12 @@
-# Final submission checklist
+# Audited final submission checklist
 
 Before uploading through Qualtrics, assemble and verify:
 
-- [ ] Final report PDF meets the page, font, and margin requirements.
-- [ ] Executable Jupyter notebook(s) run from a clean environment.
-- [ ] Repository URL is included: `https://github.com/alphons3t/nsf-chuds`
-- [ ] Presentation deck is included.
-- [ ] Raw/restricted data, secrets, and local virtual environments are excluded.
-- [ ] ZIP contents were reviewed after creation.
+- [x] Final report PDF is three pages with 10 pt Arial and one-inch margins.
+- [x] Executed Jupyter notebook contains sequential execution counts and no errors.
+- [x] Repository URL is included: `https://github.com/alphons3t/nsf-chuds`
+- [x] Presentation deck and exported PDF are included.
+- [x] Raw data, secrets, and local virtual environments are excluded.
+- [ ] Review the final ZIP contents after the release branches are committed.
 
 Create the final ZIP here. ZIP files are intentionally excluded from Git.

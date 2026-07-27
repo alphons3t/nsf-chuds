@@ -143,6 +143,36 @@ The primary expected target is local width variation extracted from the height m
 
 ## Notebooks
 
+### Audited final submission
+
+The executed final notebook is:
+
+```text
+notebooks/03_final_submission_audited.ipynb
+```
+
+It documents a leakage-controlled local-width and boundary model, compares it
+with the original notebook baseline under the same Track 21 holdout, and embeds
+the locked figures and results. The audited model improves held-out width MAE
+from **0.159 mm to 0.139 mm (12.3%)**. Held-out R² remains **-0.58** and nominal
+90% interval coverage is **76.5%**, so the submission does not claim
+closed-loop readiness.
+
+Reproduce the raw-data analysis:
+
+```bash
+python scripts/run_final_analysis.py \
+  --raw-dir /path/to/extracted/zenodo/data \
+  --output-dir results/final_submission
+```
+
+Build the executed notebook and final report:
+
+```bash
+python scripts/build_final_notebook.py
+python scripts/build_final_report.py
+```
+
 ### Organizer/post-processing notebook
 
 Use this notebook to check data, generate figures, extract thermal frames, and export thermal videos:
