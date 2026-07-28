@@ -1,0 +1,111 @@
+import numpy as np
+import pandas as pd
+
+from fmrg_submission.thermal import (
+    add_within_track_normalized_features,
+    extract_thermal_descriptors,
+)
+
+
+def test_thermal_descriptors_capture_pool_geometry_and_asymmetry():
+    frames = np.full((3, 40, 40), 900.0)
+    frames[:, 15:25, 14:26] = 1800.0
+    frames[1, 18:22, 26:32] = 1700.0
+    frames[2, 15:25, 14:30] = 1900.0
+    x_mm = np.array([20.1, 20.3, 20.5])
+
+    features = extract_thermal_descriptors(frames, x_mm, threshold=1500.0)
+
+    assert list(features["x_mm"]) == list(x_mm)
+    assert features.loc[0, "hot_area_px"] == 120
+    assert features.loc[1, "right_left_asymmetry"] > features.loc[
+        0, "right_left_asymmetry"
+    ]
+    assert features.loc[2, "hot_area_px"] > features.loc[0, "hot_area_px"]
+    assert features.loc[2, "delta_hot_area_px"] > 0
+    assert np.isfinite(features.select_dtypes("number")).all().all()
+
+
+def test_thermal_descriptors_handle_no_hot_component():
+    frames = np.full((2, 12, 12), 800.0)
+    features = extract_thermal_descriptors(frames, [20.1, 20.3], threshold=1500.0)
+
+    assert (features["hot_area_px"] == 0).all()
+    assert (features["bbox_width_px"] == 0).all()
+
+
+def test_multiscale_history_is_causal_and_contains_required_windows():
+    frames = np.full((24, 30, 30), 800.0)
+    for index in range(24):
+        frames[index, 10:20, 8 : 12 + index // 4] = 1600.0 + 10.0 * index
+    x_mm = np.arange(24.0)
+
+    original = extract_thermal_descriptors(frames, x_mm)
+    changed = frames.copy()
+    changed[20:] = 4000.0
+    perturbed = extract_thermal_descriptors(changed, x_mm)
+
+    required = {
+        "roll5_hot_area_px_mean",
+        "roll10_thermal_mass_slope",
+        "roll20_max_temperature_persistence_1500",
+        "centroid_velocity_px",
+        "shape_change",
+        "cooling_tail_decay",
+    }
+    assert required.issubset(original.columns)
+    columns = sorted(required)
+    assert np.allclose(original.loc[:19, columns], perturbed.loc[:19, columns])
+
+
+def test_early_history_has_missingness_flags_and_finite_defaults():
+    frames = np.full((3, 20, 20), 900.0)
+
+    result = extract_thermal_descriptors(frames, [1.0, 2.0, 3.0])
+
+    assert result.loc[0, "roll20_history_fraction"] == 0.05
+    assert np.isfinite(result.select_dtypes("number")).all().all()
+
+
+def test_within_track_normalization_removes_condition_shift_without_labels():
+    data = pd.DataFrame(
+        {
+            "track_id": [8, 8, 8, 10, 10, 10],
+            "thermal_mass": [1.0, 2.0, 3.0, 101.0, 102.0, 103.0],
+            "width_mm": [0.4, 0.5, 0.6, 0.8, 0.9, 1.0],
+        }
+    )
+
+    result = add_within_track_normalized_features(data, ["thermal_mass"])
+
+    medians = result.groupby("track_id")["local_thermal_mass"].median()
+    assert np.allclose(medians, 0.0)
+    assert np.allclose(
+        result.loc[result["track_id"] == 8, "local_thermal_mass"],
+        result.loc[result["track_id"] == 10, "local_thermal_mass"],
+    )
+    assert "local_width_mm" not in result
+
+
+def test_within_track_normalization_does_not_use_future_frames():
+    data = pd.DataFrame(
+        {
+            "track_id": [8] * 6,
+            "x_mm": np.arange(6, dtype=float),
+            "thermal_mass": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        }
+    )
+    changed = data.copy()
+    changed.loc[4:, "thermal_mass"] = [500.0, 600.0]
+
+    original = add_within_track_normalized_features(
+        data, ["thermal_mass"], causal=True
+    )
+    perturbed = add_within_track_normalized_features(
+        changed, ["thermal_mass"], causal=True
+    )
+
+    assert np.allclose(
+        original.loc[:3, "local_thermal_mass"],
+        perturbed.loc[:3, "local_thermal_mass"],
+    )

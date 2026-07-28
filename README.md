@@ -143,6 +143,45 @@ The primary expected target is local width variation extracted from the height m
 
 ## Notebooks
 
+### Audited final submission
+
+The executed final notebook is:
+
+```text
+notebooks/03_final_submission_audited.ipynb
+```
+
+It documents an offline, completed-sequence hierarchical local-width and
+boundary model under nested leave-one-track-out evaluation across Tracks 8,
+10, 14, and 21. The selector improves track-balanced width MAE from **0.187 mm
+to 0.148 mm (20.7%)**, worst-track MAE from **0.308 mm to 0.201 mm**, and mean
+boundary MAE from **0.180 mm to 0.142 mm**. Conditional conformal intervals
+cover **93.5%** of outer samples with **0.780 mm** mean width. Track-balanced R²
+improves from **-0.55** to **-0.13** but remains negative.
+
+The primary model runs after the thermal scan completes. A separate
+current-and-past-only causal ablation achieves **0.157 mm** MAE and **-0.18**
+track-balanced R². No held-out geometry, test-track labels, or post-process SEM
+enters prediction or model selection, and the submission does not claim
+instantaneous or closed-loop readiness.
+
+Reproduce the raw-data analysis:
+
+```bash
+PYTHONPATH=src LOKY_MAX_CPU_COUNT=1 MPLBACKEND=Agg \
+  .venv/bin/python scripts/run_improvement_experiments.py \
+  --raw-dir /path/to/extracted/zenodo/data \
+  --cache-dir /path/to/cache \
+  --output-dir results/improved_submission
+```
+
+Build the executed notebook and final report:
+
+```bash
+python scripts/build_final_notebook.py
+python scripts/build_final_report.py
+```
+
 ### Organizer/post-processing notebook
 
 Use this notebook to check data, generate figures, extract thermal frames, and export thermal videos:
