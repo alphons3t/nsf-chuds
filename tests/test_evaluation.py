@@ -128,6 +128,7 @@ def test_condition_baseline_uses_compact_summaries_not_local_history_expansion()
         "hot_area_px",
         "max_temperature",
         "thermal_mass",
+        "cooling_tail_integral",
         "roll20_hot_area_px_slope",
         "roll10_thermal_mass_std",
         "x_sin_1",
@@ -139,6 +140,7 @@ def test_condition_baseline_uses_compact_summaries_not_local_history_expansion()
         "hot_area_px__median",
         "max_temperature__median",
         "thermal_mass__median",
+        "cooling_tail_integral__median",
     ]
 
 
@@ -169,3 +171,32 @@ def test_inner_selection_prefers_spatial_fidelity_within_accuracy_tolerance():
     selected = select_inner_candidate([flat, spatial], accuracy_tolerance_mm=0.02)
 
     assert selected["model"] == "spline_ridge"
+
+
+def test_inner_selection_default_keeps_mae_loss_within_ten_microns():
+    accurate = {
+        "feature_set": "compact",
+        "model": "ridge",
+        "error": None,
+        "metrics": {
+            "track_balanced_width_mae_mm": 0.150,
+            "mean_boundary_mae_mm": 0.140,
+            "residual_correlation": 0.00,
+            "variation_std_ratio_error": 1.00,
+        },
+    }
+    spatial_but_less_accurate = {
+        "feature_set": "multiscale",
+        "model": "spline_ridge",
+        "error": None,
+        "metrics": {
+            "track_balanced_width_mae_mm": 0.161,
+            "mean_boundary_mae_mm": 0.138,
+            "residual_correlation": 0.20,
+            "variation_std_ratio_error": 0.40,
+        },
+    }
+
+    selected = select_inner_candidate([accurate, spatial_but_less_accurate])
+
+    assert selected["model"] == "ridge"

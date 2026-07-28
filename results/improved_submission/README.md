@@ -15,11 +15,15 @@ PYTHONPATH=src LOKY_MAX_CPU_COUNT=1 MPLBACKEND=Agg \
 folds, one for each untouched track. `candidate_scores.csv` records all inner
 model/feature comparisons.
 
-The promoted selector lowers track-balanced width MAE from 0.1871 mm to
-0.1627 mm while improving worst-track MAE, boundary MAE, residual
-correlation, and predicted variation amplitude. Conditional conformal
-intervals achieve 91.44% empirical coverage with lower mean width than the
-global alternative.
+The primary offline completed-sequence selector lowers track-balanced width
+MAE from 0.1871 mm to 0.1484 mm while improving worst-track MAE, boundary MAE,
+residual correlation, and predicted variation amplitude. Track-balanced
+R-squared improves from -0.5493 to -0.1345 but remains negative. Conditional
+conformal intervals achieve 93.51% empirical coverage with lower mean width
+than the global alternative.
 
-SEM is post-process and is not selected in any outer fold. No causal
-pre-process substrate claim is made.
+The `causal_ablation/` directory contains the current-and-past-only
+online-capable ablation: 0.1566 mm MAE and -0.1816 track-balanced R-squared.
+The primary model uses the completed thermal sequence, not future geometry.
+No held-out geometry, test-track labels, or post-process SEM enters prediction
+or model selection. No causal pre-process substrate claim is made.

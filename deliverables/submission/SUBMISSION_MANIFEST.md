@@ -1,13 +1,20 @@
-# FMRG improved final submission
+# Team NSF-CHUDS final resubmission
 
-The ZIP built by `scripts/build_submission_package.py` contains:
+`NSF_CHUDS_Final_Submission.zip` places these required files at the first level
+inside one team folder:
 
-- the executed audited notebook;
-- the compliant three-page final report PDF;
-- the editable presentation deck and exported presentation PDF;
-- the deck template and rebuild script;
+- `01_Final_Report.pdf`;
+- `02_Executable_Notebook.ipynb`;
+- `03_Presentation_Deck.pptx`; and
+- the optional `03_Presentation_Deck.pdf`.
+
+It also contains:
+
+- `README_SUBMISSION.md`;
+- `RUBRIC_COMPLIANCE.md`, a requirement-by-requirement evidence map;
 - nested four-track metrics, predictions, candidate scores, and figures;
-- analysis source modules and tests;
+- the causal current-and-past-only ablation;
+- analysis source modules, reproduction scripts, and tests;
 - both GitHub repository URLs.
 
 Raw Zenodo archives, extracted raw data, virtual environments, temporary

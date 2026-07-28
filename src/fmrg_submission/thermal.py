@@ -221,18 +221,35 @@ def add_within_track_normalized_features(
     feature_columns: list[str],
     *,
     prefix: str = "local_",
+    causal: bool = False,
 ) -> pd.DataFrame:
-    """Add label-free robust deviations from each track's thermal condition."""
+    """Add label-free robust deviations within each thermal track."""
     missing = {"track_id", *feature_columns}.difference(data.columns)
     if missing:
         raise ValueError(f"Missing normalization columns: {sorted(missing)}")
-    grouped = data.groupby("track_id", sort=False)
     normalized: dict[str, pd.Series] = {}
     for column in feature_columns:
         values = data[column].astype(float)
-        median = grouped[column].transform("median")
-        q25 = grouped[column].transform(lambda series: series.quantile(0.25))
-        q75 = grouped[column].transform(lambda series: series.quantile(0.75))
+        if causal:
+            median = pd.Series(index=data.index, dtype=float)
+            q25 = pd.Series(index=data.index, dtype=float)
+            q75 = pd.Series(index=data.index, dtype=float)
+            for _, frame in data.groupby("track_id", sort=False):
+                ordered = (
+                    frame.sort_values("x_mm")
+                    if "x_mm" in frame.columns
+                    else frame
+                )
+                ordered_values = values.loc[ordered.index]
+                expanding = ordered_values.expanding(min_periods=1)
+                median.loc[ordered.index] = expanding.median()
+                q25.loc[ordered.index] = expanding.quantile(0.25)
+                q75.loc[ordered.index] = expanding.quantile(0.75)
+        else:
+            grouped = data.groupby("track_id", sort=False)[column]
+            median = grouped.transform("median")
+            q25 = grouped.transform(lambda series: series.quantile(0.25))
+            q75 = grouped.transform(lambda series: series.quantile(0.75))
         scale = (q75 - q25).where((q75 - q25).abs() > 1e-12, 1.0)
         normalized[f"{prefix}{column}"] = (values - median) / scale
     return pd.concat(

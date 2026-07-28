@@ -60,7 +60,9 @@ def test_experiment_output_contract(tmp_path):
     assert (tmp_path / "candidate_scores.csv").exists()
     saved = json.loads((tmp_path / "metrics.json").read_text())
     assert saved["protocol"]["outer_tracks"] == [8, 10, 14, 21]
-    assert saved["protocol"]["accuracy_tolerance_mm"] == 0.02
+    assert saved["protocol"]["accuracy_tolerance_mm"] == 0.01
+    assert saved["protocol"]["thermal_sequence_scope"] == "completed sequence"
+    assert saved["protocol"]["prediction_mode"] == "offline"
     assert saved["uncertainty"]["selected"] in {"conditional", "global"}
 
 
@@ -81,6 +83,7 @@ def test_default_feature_sets_separate_absolute_condition_and_local_deviation():
     feature_sets = default_feature_sets(data)
 
     assert "normalized_compact_thermal" in feature_sets
+    assert not any("sem" in name for name in feature_sets)
     normalized = feature_sets["normalized_compact_thermal"]
     assert "hot_area_px" in normalized
     assert "local_hot_area_px" in normalized

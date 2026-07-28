@@ -172,7 +172,7 @@ def _instantiate(factory: Callable[[], object] | object) -> object:
 def select_inner_candidate(
     scores: list[dict[str, object]],
     *,
-    accuracy_tolerance_mm: float = 0.02,
+    accuracy_tolerance_mm: float = 0.01,
 ) -> dict[str, object]:
     """Choose spatial fidelity among candidates statistically close in MAE."""
     if accuracy_tolerance_mm < 0:
@@ -221,7 +221,8 @@ def nested_leave_one_track_out(
     estimator_factories: dict[str, Callable[[], object] | object],
     *,
     coverage: float = 0.90,
-    accuracy_tolerance_mm: float = 0.02,
+    accuracy_tolerance_mm: float = 0.01,
+    causal: bool = False,
 ) -> dict[str, object]:
     """Select models in inner track folds and evaluate each untouched outer track."""
     tracks = sorted(int(track) for track in data["track_id"].unique())
@@ -256,6 +257,7 @@ def nested_leave_one_track_out(
                             local_features=features,
                             summary_features=summary_features,
                             estimator=_instantiate(factory),
+                            causal=causal,
                         )
                         inner_predictions.append(prediction)
                     combined = pd.concat(inner_predictions, ignore_index=True)
@@ -294,6 +296,7 @@ def nested_leave_one_track_out(
                     selected_features
                 ),
                 estimator=_instantiate(selected_factory),
+                causal=causal,
             )
             calibration_prediction = pd.concat(
                 [
@@ -311,6 +314,7 @@ def nested_leave_one_track_out(
             local_features=selected_features,
             summary_features=condition_summary_features(selected_features),
             estimator=_instantiate(selected_factory),
+            causal=causal,
         )
         residuals = np.abs(
             calibration["width_mm"].to_numpy(dtype=float)

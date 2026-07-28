@@ -151,13 +151,19 @@ The executed final notebook is:
 notebooks/03_final_submission_audited.ipynb
 ```
 
-It documents a hierarchical local-width and boundary model under nested
-leave-one-track-out evaluation across Tracks 8, 10, 14, and 21. The promoted
-selector improves track-balanced width MAE from **0.187 mm to 0.163 mm
-(13.1%)**, worst-track MAE from **0.308 mm to 0.219 mm**, and mean boundary MAE
-from **0.180 mm to 0.148 mm**. Conditional intervals cover **91.4%** of outer
-samples with **0.738 mm** mean width. Track-balanced R² remains negative, so the
-submission does not claim closed-loop readiness.
+It documents an offline, completed-sequence hierarchical local-width and
+boundary model under nested leave-one-track-out evaluation across Tracks 8,
+10, 14, and 21. The selector improves track-balanced width MAE from **0.187 mm
+to 0.148 mm (20.7%)**, worst-track MAE from **0.308 mm to 0.201 mm**, and mean
+boundary MAE from **0.180 mm to 0.142 mm**. Conditional conformal intervals
+cover **93.5%** of outer samples with **0.780 mm** mean width. Track-balanced R²
+improves from **-0.55** to **-0.13** but remains negative.
+
+The primary model runs after the thermal scan completes. A separate
+current-and-past-only causal ablation achieves **0.157 mm** MAE and **-0.18**
+track-balanced R². No held-out geometry, test-track labels, or post-process SEM
+enters prediction or model selection, and the submission does not claim
+instantaneous or closed-loop readiness.
 
 Reproduce the raw-data analysis:
 

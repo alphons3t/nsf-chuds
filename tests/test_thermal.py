@@ -67,7 +67,7 @@ def test_early_history_has_missingness_flags_and_finite_defaults():
     assert np.isfinite(result.select_dtypes("number")).all().all()
 
 
-def test_within_track_normalization_removes_condition_level_shift_without_labels():
+def test_within_track_normalization_removes_condition_shift_without_labels():
     data = pd.DataFrame(
         {
             "track_id": [8, 8, 8, 10, 10, 10],
@@ -85,3 +85,27 @@ def test_within_track_normalization_removes_condition_level_shift_without_labels
         result.loc[result["track_id"] == 10, "local_thermal_mass"],
     )
     assert "local_width_mm" not in result
+
+
+def test_within_track_normalization_does_not_use_future_frames():
+    data = pd.DataFrame(
+        {
+            "track_id": [8] * 6,
+            "x_mm": np.arange(6, dtype=float),
+            "thermal_mass": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        }
+    )
+    changed = data.copy()
+    changed.loc[4:, "thermal_mass"] = [500.0, 600.0]
+
+    original = add_within_track_normalized_features(
+        data, ["thermal_mass"], causal=True
+    )
+    perturbed = add_within_track_normalized_features(
+        changed, ["thermal_mass"], causal=True
+    )
+
+    assert np.allclose(
+        original.loc[:3, "local_thermal_mass"],
+        perturbed.loc[:3, "local_thermal_mass"],
+    )

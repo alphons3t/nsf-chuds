@@ -24,6 +24,7 @@ from sklearn.preprocessing import SplineTransformer, StandardScaler
 
 from .targets import (
     add_hierarchical_targets,
+    causal_thermal_summaries,
     reconstruct_geometry,
     track_thermal_summaries,
 )
@@ -164,6 +165,15 @@ def candidate_estimators(*, random_state: int = 42) -> dict[str, object]:
     }
 
 
+def baseline_estimator() -> object:
+    """Return the low-dimensional condition-baseline regressor."""
+    return make_pipeline(
+        SimpleImputer(strategy="median"),
+        StandardScaler(),
+        Ridge(alpha=0.1),
+    )
+
+
 def _as_two_output(prediction: np.ndarray) -> np.ndarray:
     prediction = np.asarray(prediction, dtype=float)
     if prediction.ndim == 1:
@@ -180,6 +190,7 @@ def fit_hierarchical_candidate(
     local_features: list[str],
     summary_features: list[str],
     estimator: object,
+    causal: bool = False,
 ) -> pd.DataFrame:
     """Predict held-out geometry without using held-out geometry summaries."""
     if train["track_id"].nunique() < 2:
@@ -196,7 +207,11 @@ def fit_hierarchical_candidate(
 
     train_targets = add_hierarchical_targets(train)
     train_summary = track_thermal_summaries(train_targets, summary_sources)
-    test_summary = track_thermal_summaries(test, summary_sources)
+    test_summary = (
+        causal_thermal_summaries(test, summary_sources)
+        if causal
+        else track_thermal_summaries(test, summary_sources)
+    )
     baseline_targets = (
         train_targets.groupby("track_id", sort=True)[
             ["baseline_center_mm", "baseline_log_width"]
@@ -207,25 +222,24 @@ def fit_hierarchical_candidate(
     baseline_train = train_summary.merge(
         baseline_targets, on="track_id", validate="one_to_one"
     )
-    baseline_model = make_pipeline(
-        SimpleImputer(strategy="median"),
-        StandardScaler(),
-        Ridge(alpha=10.0),
-    )
+    baseline_model = baseline_estimator()
     baseline_model.fit(
         baseline_train[summary_features],
         baseline_train[["baseline_center_mm", "baseline_log_width"]],
     )
-    baseline_by_track = _as_two_output(
+    baseline_prediction = _as_two_output(
         baseline_model.predict(test_summary[summary_features])
     )
-    baseline_lookup = {
-        track_id: baseline_by_track[index]
-        for index, track_id in enumerate(test_summary["track_id"])
-    }
-    row_baseline = np.vstack(
-        [baseline_lookup[track_id] for track_id in test["track_id"]]
-    )
+    if causal:
+        row_baseline = baseline_prediction
+    else:
+        baseline_lookup = {
+            track_id: baseline_prediction[index]
+            for index, track_id in enumerate(test_summary["track_id"])
+        }
+        row_baseline = np.vstack(
+            [baseline_lookup[track_id] for track_id in test["track_id"]]
+        )
 
     local_model = clone(estimator)
     local_model.fit(

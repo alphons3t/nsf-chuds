@@ -63,6 +63,43 @@ def track_thermal_summaries(
     return pd.DataFrame.from_records(records)
 
 
+def causal_thermal_summaries(
+    data: pd.DataFrame, feature_columns: list[str]
+) -> pd.DataFrame:
+    """Return row-level thermal summaries using only the current and prior rows."""
+    missing = {"track_id", *feature_columns}.difference(data.columns)
+    if missing:
+        raise ValueError(f"Missing summary columns: {sorted(missing)}")
+    result = pd.DataFrame(index=data.index)
+    result["track_id"] = data["track_id"]
+    for column in feature_columns:
+        for suffix in ("median", "iqr", "p10", "p90"):
+            result[f"{column}__{suffix}"] = 0.0
+        for _, frame in data.groupby("track_id", sort=False):
+            ordered = (
+                frame.sort_values("x_mm")
+                if "x_mm" in frame.columns
+                else frame
+            )
+            values = ordered[column].astype(float)
+            expanding = values.expanding(min_periods=1)
+            p25 = expanding.quantile(0.25)
+            p75 = expanding.quantile(0.75)
+            result.loc[ordered.index, f"{column}__median"] = (
+                expanding.median().fillna(0.0)
+            )
+            result.loc[ordered.index, f"{column}__iqr"] = (
+                (p75 - p25).fillna(0.0)
+            )
+            result.loc[ordered.index, f"{column}__p10"] = (
+                expanding.quantile(0.10).fillna(0.0)
+            )
+            result.loc[ordered.index, f"{column}__p90"] = (
+                expanding.quantile(0.90).fillna(0.0)
+            )
+    return result
+
+
 def reconstruct_geometry(
     baseline_center: np.ndarray,
     baseline_log_width: np.ndarray,

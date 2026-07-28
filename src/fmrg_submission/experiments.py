@@ -177,13 +177,6 @@ def default_feature_sets(data: pd.DataFrame) -> dict[str, list[str]]:
         result["normalized_multiscale_thermal"] = list(
             dict.fromkeys(condition_core + normalized_multiscale + position)
         )
-    sem = [
-        column
-        for column in data.select_dtypes(include="number").columns
-        if column.startswith("sem_")
-    ]
-    if sem:
-        result["multiscale_thermal_plus_postprocess_sem"] = thermal + sem
     return {name: columns for name, columns in result.items() if columns}
 
 
@@ -389,7 +382,8 @@ def run_experiments(
     ) = None,
     incumbent_features: list[str] | None = None,
     coverage: float = 0.90,
-    accuracy_tolerance_mm: float = 0.02,
+    accuracy_tolerance_mm: float = 0.01,
+    causal: bool = False,
 ) -> dict[str, object]:
     """Run the fixed incumbent and nested candidate selector, then gate promotion."""
     output_dir = Path(output_dir)
@@ -411,6 +405,7 @@ def run_experiments(
         estimator_factories,
         coverage=coverage,
         accuracy_tolerance_mm=accuracy_tolerance_mm,
+        causal=causal,
     )
     candidate_predictions = candidate["predictions"]
     candidate_metrics = candidate["metrics"]
@@ -452,6 +447,10 @@ def run_experiments(
             "primary_metric": "unweighted mean of per-track width MAE",
             "coverage_target": coverage,
             "accuracy_tolerance_mm": accuracy_tolerance_mm,
+            "thermal_sequence_scope": (
+                "current and prior frames" if causal else "completed sequence"
+            ),
+            "prediction_mode": "online-capable" if causal else "offline",
             "steady_state_x_mm": list(STEADY_STATE_RANGE_MM),
             "random_seed": 42,
         },
@@ -477,6 +476,10 @@ def run_experiments(
         "sem_ablation": {
             "source": "post-process SEM with the processed center masked",
             "preprocess_sem_available": False,
+            "eligible_for_prediction": False,
+            "exclusion_reason": (
+                "post-process imagery is unavailable at prediction time"
+            ),
             "outer_folds_selecting_sem": sem_selections,
             "selected_by_any_outer_fold": sem_selections > 0,
             "causal_substrate_claim": False,
@@ -510,6 +513,7 @@ def load_cached_aligned_data(
     raw_dir: Path,
     *,
     aligned_output_dir: Path | None = None,
+    causal: bool = False,
 ) -> pd.DataFrame:
     """Extract current descriptors from cached thermal frames and geometry."""
     from nsf_fmrg_data import get_sem_tile_paths
@@ -582,4 +586,6 @@ def load_cached_aligned_data(
         and not column.startswith("sem_")
         and not column.startswith("local_")
     ]
-    return add_within_track_normalized_features(combined, thermal_columns)
+    return add_within_track_normalized_features(
+        combined, thermal_columns, causal=causal
+    )

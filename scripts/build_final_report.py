@@ -223,6 +223,7 @@ def build_report():
     metrics = json.loads(METRICS_PATH.read_text())
     incumbent = metrics["incumbent"]["metrics"]
     promoted = metrics["candidates"]["nested_metrics"]
+    causal = metrics["causal_ablation"]["metrics"]
     uncertainty = metrics["uncertainty"]
 
     improvement = 100 * (
@@ -243,9 +244,9 @@ def build_report():
         leftMargin=inch,
         rightMargin=inch,
         topMargin=inch,
-        bottomMargin=0.8 * inch,
+        bottomMargin=inch,
         title="FMRG Final Submission - Hierarchical Local Geometry Prediction",
-        author="Team Submission",
+        author="Team NSF-CHUDS",
     )
     story = []
 
@@ -257,8 +258,8 @@ def build_report():
                 style["title"],
             ),
             Paragraph(
-                "Hierarchical condition baselines, causal multiscale descriptors, physically "
-                "consistent boundaries, and nested four-track validation",
+                "Offline completed-sequence hierarchy, physically consistent boundaries, "
+                "causal ablation, and nested four-track validation",
                 style["subtitle"],
             ),
             metric_strip(
@@ -284,9 +285,10 @@ def build_report():
                 style["body"],
             ),
             Paragraph(
-                "The key modeling change is to predict condition-level baseline center and "
-                "log-width from track summaries, then predict local residuals from frame history. "
-                "This directly addresses cross-power mean shifts and over-smoothed local signals.",
+                "The primary model predicts condition-level baseline center and log-width from "
+                "completed-sequence thermal summaries, then predicts local residuals from frame "
+                "history. It runs after the thermal scan completes and directly addresses "
+                "cross-power mean shifts and over-smoothed local signals.",
                 style["body"],
             ),
             section("Problem formulation and data alignment", style),
@@ -309,15 +311,22 @@ def build_report():
                 style,
             ),
             bullet(
-                "Thermal history is causal: current and earlier frames only. Headline scores are "
-                "unweighted means of per-track outer metrics.",
+                "The primary model may use later thermal frames from the completed scan, but no "
+                "held-out geometry, test-track labels, or post-process SEM enters prediction, "
+                "feature/model selection, preprocessing, or interval calibration.",
+                style,
+            ),
+            bullet(
+                "A separate current-and-past-only ablation proves that changing future thermal "
+                "frames cannot change an earlier causal-ablation prediction.",
                 style,
             ),
             Paragraph("Generative AI use", style["h2"]),
             Paragraph(
-                "OpenAI Codex assisted with code review, tests, debugging, and document layout. "
-                "All numbers come from tracked analysis code and saved outer-fold predictions; "
-                "AI did not supply or alter experimental measurements.",
+                "Generative AI assisted with code review, test generation, debugging, and "
+                "document layout. Team members reviewed the resulting code and materials. All "
+                "numbers come from tracked analysis code and saved outer-fold predictions; AI "
+                "did not supply or alter experimental measurements.",
                 style["body"],
             ),
             PageBreak(),
@@ -337,19 +346,19 @@ def build_report():
                 style["body"],
             ),
             Paragraph(
-                "<b>Constrained multi-output prediction.</b> Track thermal summaries predict "
-                "baseline center and baseline log-width. Local features jointly predict center "
-                "and log-width residuals. Exponentiating log-width guarantees positive width; "
-                "left/right are reconstructed from one shared center and width, so boundaries "
-                "remain ordered.",
+                "<b>Constrained multi-output prediction.</b> Completed-sequence thermal summaries "
+                "predict baseline center and baseline log-width. Local features jointly predict "
+                "center and log-width residuals. Exponentiating "
+                "log-width guarantees positive width; left/right are reconstructed from one "
+                "shared center and width, so boundaries remain ordered.",
                 style["body"],
             ),
             Paragraph(
                 "<b>Low-capacity model ladder.</b> Inner folds compare Ridge, elastic net, partial "
-                "least squares, spline-Ridge, and a Gaussian process. Within 0.02 mm of the best "
+                "least squares, spline-Ridge, and a Gaussian process. Within 0.01 mm of the best "
                 "inner MAE, selection favors lower variation-scale error and higher residual "
-                "correlation. Spline-Ridge with normalized compact thermal features wins three "
-                "outer folds; Track 14 independently chooses normalized multiscale Ridge.",
+                "correlation. Each outer fold independently selects its feature family and "
+                "estimator using only the other three tracks.",
                 style["body"],
             ),
             Spacer(1, 4),
@@ -388,10 +397,10 @@ def build_report():
                         f"{promoted['residual_correlation'] / incumbent['residual_correlation']:.2f}x",
                     ],
                     [
-                        "Predicted/measured variation std.",
+                        "Predicted/measured local width std.",
                         f"{incumbent['variation_std_ratio']:.3f}",
                         f"{promoted['variation_std_ratio']:.3f}",
-                        "+0.142",
+                        f"{promoted['variation_std_ratio'] - incumbent['variation_std_ratio']:+.3f}",
                     ],
                 ],
                 style,
@@ -406,8 +415,8 @@ def build_report():
             section("Uncertainty, interpretation, and limits", style),
             Image(str(FIGURES / "before_after_scorecard.png"), width=6.5 * inch, height=2.48 * inch),
             Paragraph(
-                "Figure 2. The promoted model improves accuracy, boundary position, and local "
-                "variation fidelity under the same four-track outer protocol.",
+                "Figure 2. The promoted model improves accuracy, boundary position, and predicted "
+                "variation amplitude under the same four-track outer protocol.",
                 style["small"],
             ),
             Paragraph("Conditional uncertainty", style["h2"]),
@@ -417,7 +426,8 @@ def build_report():
                 f"<b>{uncertainty['conditional']['mean_width_mm']:.3f} mm</b> mean width, versus "
                 f"{uncertainty['global']['coverage'] * 100:.1f}% and "
                 f"{uncertainty['global']['mean_width_mm']:.3f} mm for a fixed global interval. "
-                "Mean width expands from "
+                "The conditional method is selected because it is closer to the 90% target and "
+                "narrower. Its mean width expands from "
                 f"{uncertainty['conditional_by_difficulty']['low']['mean_width_mm']:.3f} mm in "
                 f"easy regions to {uncertainty['conditional_by_difficulty']['high']['mean_width_mm']:.3f} mm "
                 "in difficult regions.",
@@ -428,8 +438,8 @@ def build_report():
                 "Track-level hot area, maximum temperature, thermal mass, and cooling-tail "
                 "summaries anchor the condition baseline. Normalized pool shape, temperature, "
                 "asymmetry, and recent history contribute local residual information. These are "
-                "predictive associations. The available SEM is post-process; after masking the "
-                "processed center, SEM is selected in <b>zero</b> outer folds. We therefore make "
+                "predictive associations. The available SEM is post-process and is excluded from "
+                "prediction because it is unavailable at frame-time inference. We therefore make "
                 "no causal pre-process substrate claim.",
                 style["body"],
             ),
@@ -437,6 +447,12 @@ def build_report():
             bullet(
                 f"Track-balanced R-squared remains {promoted['track_balanced_width_r2']:.2f}; "
                 "the result is not ready for closed-loop control.",
+                style,
+            ),
+            bullet(
+                f"The primary result is offline. The current-and-past-only ablation scores "
+                f"{causal['track_balanced_width_mae_mm']:.3f} mm MAE and "
+                f"{causal['track_balanced_width_r2']:.2f} R-squared.",
                 style,
             ),
             bullet(
@@ -465,19 +481,16 @@ def build_report():
             ),
             Paragraph("Reproduction and sources", style["h2"]),
             Paragraph(
-                "<font name='Courier'>PYTHONPATH=src LOKY_MAX_CPU_COUNT=1 MPLBACKEND=Agg "
-                ".venv/bin/python scripts/run_improvement_experiments.py "
-                "--raw-dir /path/to/data --cache-dir /path/to/cache "
-                "--output-dir results/improved_submission</font><br/>"
+                "Reproduce with <font name='Arial'>scripts/run_improvement_experiments.py</font>. "
                 "Dataset: doi:10.5281/zenodo.21285367; paper: arXiv:2607.07965; "
-                "locked metrics: results/improved_submission/metrics.json.",
+                "metrics: <font name='Arial'>results/improved_submission/metrics.json</font>.",
                 style["small"],
             ),
         ]
     )
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    doc.build(story, onFirstPage=footer, onLaterPages=footer)
+    doc.build(story)
     print(OUTPUT)
 
 

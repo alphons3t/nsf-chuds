@@ -3,6 +3,7 @@ import pandas as pd
 
 from fmrg_submission.modeling import (
     align_geometry_to_frames,
+    baseline_estimator,
     candidate_estimators,
     conformal_half_width,
     fit_hierarchical_candidate,
@@ -151,6 +152,15 @@ def test_candidate_ladder_contains_requested_low_capacity_models():
     } <= set(names)
 
 
+def test_hierarchical_regularization_corrects_baseline_without_flattening_local_signal():
+    baseline = baseline_estimator()
+    candidates = candidate_estimators()
+
+    assert baseline.get_params()["ridge__alpha"] == 0.1
+    assert candidates["ridge"].get_params()["ridge__alpha"] == 10.0
+    assert candidates["spline_ridge"].get_params()["ridge__alpha"] == 100.0
+
+
 def test_hierarchical_prediction_ignores_held_out_geometry_summaries():
     data = _hierarchical_data()
     train = data[data["track_id"].isin([8, 10])]
@@ -179,6 +189,45 @@ def test_hierarchical_prediction_ignores_held_out_geometry_summaries():
     )
     assert np.allclose(
         first["center_prediction_mm"], second["center_prediction_mm"]
+    )
+
+
+def test_hierarchical_prediction_at_x_does_not_use_future_thermal_frames():
+    data = _hierarchical_data()
+    train = data[data["track_id"].isin([8, 10])]
+    test = data[data["track_id"] == 14].copy()
+    estimator = candidate_estimators()["ridge"]
+
+    first = fit_hierarchical_candidate(
+        train,
+        test,
+        local_features=["signal"],
+        summary_features=["signal__median"],
+        estimator=estimator,
+        causal=True,
+    )
+    changed = test.copy()
+    changed.loc[changed.index[-4:], "signal"] = 1e6
+    second = fit_hierarchical_candidate(
+        train,
+        changed,
+        local_features=["signal"],
+        summary_features=["signal__median"],
+        estimator=estimator,
+        causal=True,
+    )
+
+    assert np.allclose(
+        first.loc[:5, "width_prediction_mm"],
+        second.loc[:5, "width_prediction_mm"],
+    )
+    assert np.allclose(
+        first.loc[:5, "center_prediction_mm"],
+        second.loc[:5, "center_prediction_mm"],
+    )
+    assert np.allclose(
+        first.loc[:5, "baseline_log_width_prediction"],
+        second.loc[:5, "baseline_log_width_prediction"],
     )
 
 

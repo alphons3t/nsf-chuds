@@ -30,6 +30,30 @@ def main() -> None:
         aligned_output_dir=args.output_dir / "tables",
     )
     result = run_experiments(data, args.output_dir)
+    causal_output = args.output_dir / "causal_ablation"
+    causal_data = load_cached_aligned_data(
+        cache_dir,
+        args.raw_dir,
+        causal=True,
+    )
+    causal_result = run_experiments(
+        causal_data,
+        causal_output,
+        causal=True,
+    )
+    metrics_path = args.output_dir / "metrics.json"
+    saved_metrics = json.loads(metrics_path.read_text())
+    saved_metrics["causal_ablation"] = {
+        "role": (
+            "current-and-past-only online-capable ablation; "
+            "not the primary headline model"
+        ),
+        "metrics": causal_result["candidates"]["nested_metrics"],
+        "uncertainty": causal_result["uncertainty"],
+        "predictions": "causal_ablation/outer_fold_predictions.csv",
+        "full_metrics": "causal_ablation/metrics.json",
+    }
+    metrics_path.write_text(json.dumps(saved_metrics, indent=2) + "\n")
     summary = {
         "incumbent_mae_mm": result["incumbent"]["metrics"][
             "track_balanced_width_mae_mm"
@@ -38,6 +62,9 @@ def main() -> None:
             "track_balanced_width_mae_mm"
         ],
         "promoted": result["promotion"]["promoted"],
+        "causal_ablation_mae_mm": causal_result["candidates"][
+            "nested_metrics"
+        ]["track_balanced_width_mae_mm"],
         "selected": result["selected"],
     }
     print(json.dumps(summary, indent=2))

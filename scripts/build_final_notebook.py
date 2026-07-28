@@ -37,7 +37,8 @@ def build_notebook():
             # FMRG Final Submission: Hierarchical Local Geometry Prediction
 
             This executed notebook is the compact submission record for predicting spatially
-            varying DED track width, center, and left/right boundaries from causal thermal history.
+            varying DED track width, center, and left/right boundaries from the completed thermal
+            sequence. This primary model is an offline prediction after the scan completes.
 
             **Evaluation protocol:** each of Tracks 8, 10, 14, and 21 is held out once. Feature
             family, estimator, preprocessing, and calibration are selected by leave-one-track-out
@@ -88,7 +89,8 @@ def build_notebook():
             conditions and the smaller spatial fluctuations within a track. The promoted model
             separates them:
 
-            1. track-level thermal summaries predict baseline center and baseline log-width;
+            1. completed-sequence thermal summaries predict baseline center and baseline
+               log-width;
             2. frame-level thermal history predicts local center and log-width residuals;
             3. width is reconstructed with an exponential transform, so it is positive; and
             4. left/right boundaries are reconstructed from shared center and width, so they
@@ -97,7 +99,8 @@ def build_notebook():
             The candidate ladder includes Ridge, elastic net, partial least squares,
             spline-Ridge, and a low-capacity Gaussian process. Thermal descriptors include melt
             pool shape, temperature distribution, gradients, asymmetry, cooling tail, motion,
-            persistence, and causal 5-, 10-, and 20-frame history.
+            persistence, and causal 5-, 10-, and 20-frame history. The primary model also uses
+            full-sequence robust normalization and condition summaries, so it is offline.
             """
         ),
         code(
@@ -147,10 +150,10 @@ def build_notebook():
             """
             ## Four untouched outer tests
 
-            The promoted selector uses normalized compact thermal features with spline-Ridge in
-            three of four outer folds. Track 14 independently selects normalized multiscale
-            features with Ridge. This is the honest output of nested selection, not a single
-            configuration tuned against all four labels.
+            Each outer fold independently chooses its feature family and low-capacity estimator
+            using only the other three tracks. The final outer predictions are therefore the
+            honest output of nested selection, not one configuration tuned against all four
+            labels.
             """
         ),
         code(
@@ -185,9 +188,8 @@ def build_notebook():
             ## Conditional uncertainty
 
             Normalized conformal calibration scales intervals by predicted local difficulty.
-            The selected conditional method is closer to the 90% target and narrower on average
-            than a single global interval. Interval width grows from easy to difficult regions,
-            which is the intended behavior.
+            For the primary offline model it is closer to the 90% target and narrower on average
+            than a single global interval. Interval width grows from easy to difficult regions.
             """
         ),
         code(
@@ -221,10 +223,10 @@ def build_notebook():
             """
             ## SEM ablation and interpretation
 
-            The available SEM is post-process. The processed center band is masked and the
-            remaining flank texture is evaluated only as an ablation. It is selected in zero
-            outer folds. Therefore this submission makes no causal claim that pre-existing
-            substrate texture drives geometry.
+            The available SEM is post-process and cannot exist at frame-time inference. It is
+            excluded from predictive candidates even when the processed center band is masked.
+            Therefore this submission makes no causal claim that pre-existing substrate texture
+            drives geometry.
 
             Interpretable thermal links come from the selected descriptor families: track-level
             hot area, maximum temperature, thermal mass, and cooling-tail summaries explain the
@@ -239,12 +241,40 @@ def build_notebook():
         ),
         markdown(
             """
+            ## Causal current-and-past-only ablation
+
+            The headline model is offline because full-sequence thermal summaries and robust
+            normalization are computed after the scan. To test online potential, the same
+            hierarchy is rerun with expanding summaries and normalization that use only the
+            current and earlier frames. Changing later thermal frames cannot change an earlier
+            causal-ablation prediction.
+            """
+        ),
+        code(
+            """
+            causal = metrics["causal_ablation"]
+            pd.Series(
+                {
+                    "offline_primary_MAE_mm": promoted["track_balanced_width_mae_mm"],
+                    "causal_ablation_MAE_mm": causal["metrics"][
+                        "track_balanced_width_mae_mm"
+                    ],
+                    "offline_primary_R2": promoted["track_balanced_width_r2"],
+                    "causal_ablation_R2": causal["metrics"][
+                        "track_balanced_width_r2"
+                    ],
+                }
+            ).round(4)
+            """
+        ),
+        markdown(
+            """
             ## Historical Track 21 benchmark
 
             The earlier audited split achieved 0.139 mm Track 21 MAE versus 0.159 mm for the
             original notebook. That number is retained only as a historical benchmark. Under the
             stronger four-track nested protocol, Track 21 receives no special tuning and scores
-            0.219 mm. The two numbers answer different questions and must not be combined.
+            0.201 mm. The two numbers answer different questions and must not be combined.
             """
         ),
         code(
@@ -256,15 +286,19 @@ def build_notebook():
             """
             ## Honest conclusion
 
-            - Four-track width MAE improves from **0.187 mm to 0.163 mm** (**13.1%**).
-            - Worst-track MAE improves from **0.308 mm to 0.219 mm** (**28.9%**).
-            - Mean boundary MAE improves from **0.180 mm to 0.148 mm** (**17.6%**).
-            - Residual correlation improves from **0.055 to 0.124**, and predicted variation
-              amplitude rises from **21% to 36%** of measured variation.
-            - Conditional intervals achieve **91.4%** coverage with **0.738 mm** mean width,
-              versus **94.2%** and **0.824 mm** for the global interval.
-            - Track-balanced R-squared remains **-0.34**; this is a stronger benchmark, not a
-              closed-loop-ready controller.
+            - The offline completed-sequence model improves four-track width MAE from **0.187 mm
+              to 0.148 mm** (**20.7%**), worst-track MAE from **0.308 mm to 0.201 mm**
+              (**34.8%**), and boundary MAE from **0.180 mm to 0.142 mm** (**21.1%**).
+            - Residual correlation improves from **0.055 to 0.086**, and predicted variation
+              amplitude rises from **21% to 32%** of measured variation.
+            - Conditional intervals achieve **93.5%** coverage with **0.780 mm** mean width,
+              versus **94.9%** and **0.877 mm** for the global interval.
+            - Track-balanced R-squared improves from **-0.55 to -0.13** but remains negative.
+            - The causal current-and-past-only ablation reaches **0.157 mm** MAE and **-0.18** R².
+
+            The primary model uses completed thermal inputs, not future geometry. No held-out
+            geometry, test-track labels, or post-process SEM enters prediction or selection.
+            This is an offline quality prediction, not an instantaneous or closed-loop controller.
 
             The next decisive experiment is registered pre-process surface measurement across
             more plates, powers, and repeats.
@@ -274,9 +308,10 @@ def build_notebook():
             """
             ## Generative AI disclosure
 
-            OpenAI Codex assisted with code review, test generation, debugging, and artifact
-            layout. Reported metrics were produced by tracked analysis code and saved outer-fold
-            predictions; AI did not supply or alter experimental measurements.
+            Generative AI assisted with code review, test generation, debugging, and artifact
+            layout. Team members reviewed the resulting code and materials. Reported metrics were
+            produced by tracked analysis code and saved outer-fold predictions; AI did not supply
+            or alter experimental measurements.
             """
         ),
         markdown(
