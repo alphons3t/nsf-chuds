@@ -9,11 +9,10 @@ Manufacturing Data Challenge:
    errors.
 3. `03_Presentation_Deck.pptx` — editable, self-contained ten-slide deck.
 
-`03_Presentation_Deck.pdf` is included as a portable copy. The remaining
-folders contain the analysis source, locked outer-fold results, tests, and
-reproduction scripts. `RUBRIC_COMPLIANCE.md` maps every official format,
-report-content, and review criterion to evidence or an explicitly disclosed
-limitation.
+The `results/` folder contains only the four tracked support files read by the
+notebook: locked metrics, outer-fold predictions, and two displayed figures.
+`requirements.txt` lists the Python dependencies. Full analysis source and
+tests are maintained in the repository linked below.
 
 ## Primary and ablation results
 
@@ -36,7 +35,7 @@ test-track labels, or post-process SEM enters prediction or model selection.
 Post-process SEM is excluded because it is unavailable at prediction time. We
 do not claim instantaneous or closed-loop readiness.
 
-## Reproduce
+## Execute the submitted notebook
 
 Install Python dependencies:
 
@@ -44,26 +43,15 @@ Install Python dependencies:
 python -m pip install -r requirements.txt
 ```
 
-Download the official data from Zenodo DOI `10.5281/zenodo.21285367`, then run:
+From the extracted submission folder, open and run:
 
 ```bash
-PYTHONPATH=src LOKY_MAX_CPU_COUNT=1 MPLBACKEND=Agg \
-  python scripts/run_improvement_experiments.py \
-  --raw-dir /path/to/extracted/zenodo/data \
-  --cache-dir /path/to/cache \
-  --output-dir results/improved_submission
+jupyter notebook 02_Executable_Notebook.ipynb
 ```
 
-Run the tests:
-
-```bash
-PYTHONPATH=src python -m pytest -q
-```
-
-Repository mirrors:
+The complete raw-data pipeline, tests, and artifact builders are available at:
 
 - https://github.com/alphons3t/nsf-chuds
-- https://github.com/joeyperez1-debug/nsfsubmit
 
 ## Generative AI disclosure
 

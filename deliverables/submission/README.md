@@ -4,14 +4,14 @@ Before uploading through Qualtrics, assemble and verify:
 
 - [x] Final report PDF is three pages with 10 pt Arial and one-inch margins.
 - [x] Executed Jupyter notebook contains sequential execution counts and no errors.
-- [x] Both repository URLs are included.
-- [x] Presentation deck and exported PDF are included.
+- [x] The authoritative repository URL is included.
+- [x] The editable presentation deck is included without a duplicate PDF.
 - [x] Primary files are clearly numbered at the first level of the team folder.
 - [x] Offline primary and causal ablation are labeled separately.
 - [x] Post-process SEM is excluded from prediction.
-- [x] Official format, report-content, and review criteria are mapped to evidence.
+- [x] Only the four support files required by the notebook are included.
 - [x] Raw data, secrets, and local virtual environments are excluded.
-- [ ] Review the final ZIP contents after the release branches are committed.
+- [x] Final ZIP contents and notebook dependencies are verified.
 
 Build `NSF_CHUDS_Final_Submission.zip` here. ZIP files are intentionally
 excluded from Git.

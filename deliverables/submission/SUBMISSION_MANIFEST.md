@@ -5,17 +5,14 @@ inside one team folder:
 
 - `01_Final_Report.pdf`;
 - `02_Executable_Notebook.ipynb`;
-- `03_Presentation_Deck.pptx`; and
-- the optional `03_Presentation_Deck.pdf`.
+- `03_Presentation_Deck.pptx`.
 
-It also contains:
+The only supporting files are:
 
 - `README_SUBMISSION.md`;
-- `RUBRIC_COMPLIANCE.md`, a requirement-by-requirement evidence map;
-- nested four-track metrics, predictions, candidate scores, and figures;
-- the causal current-and-past-only ablation;
-- analysis source modules, reproduction scripts, and tests;
-- both GitHub repository URLs.
+- `requirements.txt`;
+- locked nested metrics and outer-fold predictions;
+- the two figures displayed by the executable notebook.
 
-Raw Zenodo archives, extracted raw data, virtual environments, temporary
-renders, and credentials are excluded.
+Duplicate deck exports, rubric notes, raw archives, source modules, tests,
+temporary renders, virtual environments, and credentials are excluded.
